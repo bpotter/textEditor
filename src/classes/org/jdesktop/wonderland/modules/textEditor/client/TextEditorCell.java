@@ -243,8 +243,8 @@ public class TextEditorCell extends App2DCell
         SharedInteger swapCount = settings.get(TextEditorConstants.SWAP_COUNT,
                                                SharedInteger.class);
         if (getCount != null && swapCount != null) {
-            textEditorWindow.getCodePanel().setOperationCount(getCount.getValue(),
-                                                        swapCount.getValue());
+//            textEditorWindow.getCodePanel().setOperationCount(getCount.getValue(),
+//                                                        swapCount.getValue());
         }
     }
 
@@ -270,7 +270,7 @@ public class TextEditorCell extends App2DCell
                 textEditorWindow.setControlsEnabled(false);
             }
 
-            textEditorWindow.getCodePanel().setRunning(true);
+//            textEditorWindow.getCodePanel().setRunning(true);
         } else {
             if (!ourChange) {
                 // someone else requested a stop -- make sure we are stopped
@@ -278,7 +278,7 @@ public class TextEditorCell extends App2DCell
             }
 
             textEditorWindow.setControlsEnabled(true);
-            textEditorWindow.getCodePanel().setRunning(false);
+//            textEditorWindow.getCodePanel().setRunning(false);
         }
     }
 
@@ -286,7 +286,7 @@ public class TextEditorCell extends App2DCell
         SharedString val = settings.get(TextEditorConstants.HIGHLIGHT_VALUES,
                                         SharedString.class);
         if (val != null) {
-            textEditorWindow.getCodePanel().setHighlightedVals(val.getValue());
+//            textEditorWindow.getCodePanel().setHighlightedVals(val.getValue());
         }
     }
 
