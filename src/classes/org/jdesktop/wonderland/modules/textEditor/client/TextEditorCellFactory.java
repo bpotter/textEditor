@@ -19,7 +19,7 @@ import java.util.Properties;
 @CellFactory
 public class TextEditorCellFactory implements CellFactorySPI {
     public String[] getExtensions() {
-        return new String[] {"txt"};
+        return new String[] {"txt", "log"};
     }
 
     public <T extends CellServerState> T getDefaultCellServerState(Properties properties) {
@@ -29,15 +29,16 @@ public class TextEditorCellFactory implements CellFactorySPI {
         if (properties != null) {
             String uri = properties.getProperty("content-uri");
             if (uri != null) {
-
-                clientState.setText("not implemented");
+                // read the file
+                clientState = new TextEditorCellClientState();
+                clientState.setText(TextEditorImportExportHelper.importFile(uri));
 
             }
         }
         if (clientState == null) {
             clientState = new TextEditorCellClientState();
         }
-
+        state.setText(clientState.getText());
         return (T) state;}
 
     public String getDisplayName() {
