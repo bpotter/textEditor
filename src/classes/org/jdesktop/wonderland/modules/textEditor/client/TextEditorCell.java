@@ -18,18 +18,28 @@
 package org.jdesktop.wonderland.modules.textEditor.client;
 
 import com.jme.math.Vector2f;
+
 import java.math.BigInteger;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.logging.Level;
-import javax.swing.SwingUtilities;
+import javax.swing.*;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
+import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.Document;
+
 import org.jdesktop.wonderland.client.cell.CellCache;
 import org.jdesktop.wonderland.client.cell.ChannelComponent.ComponentMessageReceiver;
 import org.jdesktop.wonderland.client.cell.annotation.UsesCellComponent;
+import org.jdesktop.wonderland.client.contextmenu.ContextMenuActionListener;
+import org.jdesktop.wonderland.client.contextmenu.ContextMenuItem;
+import org.jdesktop.wonderland.client.contextmenu.ContextMenuItemEvent;
+import org.jdesktop.wonderland.client.contextmenu.SimpleContextMenuItem;
+import org.jdesktop.wonderland.client.contextmenu.cell.ContextMenuComponent;
+import org.jdesktop.wonderland.client.contextmenu.spi.ContextMenuFactorySPI;
+import org.jdesktop.wonderland.client.scenemanager.event.ContextEvent;
 import org.jdesktop.wonderland.common.cell.CellID;
 import org.jdesktop.wonderland.common.cell.CellStatus;
 import org.jdesktop.wonderland.common.cell.messages.CellMessage;
@@ -47,15 +57,15 @@ import org.jdesktop.wonderland.modules.sharedstate.common.SharedInteger;
 import org.jdesktop.wonderland.modules.sharedstate.common.SharedString;
 
 /**
- *
  * @author Jonathan Kaplan <jonathankap@gmail.com>
  */
 public class TextEditorCell extends App2DCell
-        implements  SharedMapListenerCli
-{
+        implements SharedMapListenerCli {
     @UsesCellComponent
     private SharedStateComponent state;
 
+    @UsesCellComponent
+    ContextMenuComponent menuComponent;
 
     private final StringBuffer codeTemplate;
 
@@ -70,7 +80,6 @@ public class TextEditorCell extends App2DCell
         super(cellID, cellCache);
 
 
-
         codeTemplate = new StringBuffer();
     }
 
@@ -79,6 +88,21 @@ public class TextEditorCell extends App2DCell
         super.setClientState(clientState);
 
         this.clientState = (TextEditorCellClientState) clientState;
+
+    }
+
+    public String getCurrentText() {
+        Document document =  ((TextEditorWindow)getApp().getPrimaryWindow()).getDocument();
+        try {
+            return  document.getText(0, document.getLength() -1);
+        } catch (BadLocationException e) {
+            e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+        }
+        return "";
+    }
+
+    public SharedStateComponent getState() {
+        return state;
     }
 
     @Override
@@ -96,6 +120,8 @@ public class TextEditorCell extends App2DCell
             }
 
             // tell the app to be displayed in this cell.
+
+            menuComponent.addContextMenuFactory(new TextEditorContextMenuFactory());
             textEditorApp.addDisplayer(this);
 
             // set initial position above ground
@@ -105,24 +131,26 @@ public class TextEditorCell extends App2DCell
 
             // this app has only one window, so it is always top-level
             textEditorWindow = new TextEditorWindow(this, textEditorApp,
-                        getPreferredWidth(), getPreferredHeight(),
-                        true, clientState.getPixelScale());
+                    getPreferredWidth(), getPreferredHeight(),
+                    true, clientState.getPixelScale());
             textEditorWindow.setDecorated(getDecorated());
             textEditorApp.setWindow(textEditorWindow);
 
             // add a listener to update the document
             DocumentHandler handler = new DocumentHandler(textEditorWindow.getDocument(),
-                                                          clientState.getVersion(),
-                                                          clientState.getText());
+                    clientState.getVersion(),
+                    clientState.getText());
+            textEditorWindow.getCodePanel().setFileLabel(clientState.getFileName());
             channel.addMessageReceiver(TextEditorCellInsertMessage.class, handler);
             channel.addMessageReceiver(TextEditorCellDeleteMessage.class, handler);
             channel.addMessageReceiver(TextEditorCellMultiChangeMessage.class, handler);
 
-             // both the app and the user want this window to be visible
-             textEditorWindow.setVisibleApp(true);
-             textEditorWindow.setVisibleUser(this, true);
+            // both the app and the user want this window to be visible
+            textEditorWindow.setVisibleApp(true);
+            textEditorWindow.setVisibleUser(this, true);
 
-             syncState();
+            syncState();
+
         } else if (status == CellStatus.DISK) {
             channel.removeMessageReceiver(TextEditorCellInsertMessage.class);
             channel.removeMessageReceiver(TextEditorCellDeleteMessage.class);
@@ -141,26 +169,28 @@ public class TextEditorCell extends App2DCell
         }
     }
 
+    protected TextEditorCell getCell() {
+
+        return this;
+    }
+
     protected int getPreferredWidth() {
         SharedInteger width = settings.get(TextEditorConstants.PREF_WIDTH,
-                                           SharedInteger.class);
+                SharedInteger.class);
         return width.getValue();
     }
 
     protected int getPreferredHeight() {
         SharedInteger height = settings.get(TextEditorConstants.PREF_HEIGHT,
-                                           SharedInteger.class);
+                SharedInteger.class);
         return height.getValue();
     }
 
     protected boolean getDecorated() {
         SharedBoolean decorated = settings.get(TextEditorConstants.DECORATED,
-                                               SharedBoolean.class);
+                SharedBoolean.class);
         return decorated.getValue();
     }
-
-
-
 
 
     public void highlightLine(int lineNumber) {
@@ -214,8 +244,7 @@ public class TextEditorCell extends App2DCell
                 if (smec.getPropertyName().equals(TextEditorConstants.HIGHLIGHT_LINE)) {
                     updateHighlightLine();
                 } else if (smec.getPropertyName().equals(TextEditorConstants.GET_COUNT) ||
-                           smec.getPropertyName().equals(TextEditorConstants.SWAP_COUNT))
-                {
+                        smec.getPropertyName().equals(TextEditorConstants.SWAP_COUNT)) {
                     updateOperationCounts();
                 } else if (smec.getPropertyName().equals(TextEditorConstants.STATUS)) {
                     updateStatus(smec.getSenderID());
@@ -239,9 +268,9 @@ public class TextEditorCell extends App2DCell
 
     private void updateOperationCounts() {
         SharedInteger getCount = settings.get(TextEditorConstants.GET_COUNT,
-                                              SharedInteger.class);
+                SharedInteger.class);
         SharedInteger swapCount = settings.get(TextEditorConstants.SWAP_COUNT,
-                                               SharedInteger.class);
+                SharedInteger.class);
         if (getCount != null && swapCount != null) {
 //            textEditorWindow.getCodePanel().setOperationCount(getCount.getValue(),
 //                                                        swapCount.getValue());
@@ -251,7 +280,7 @@ public class TextEditorCell extends App2DCell
     private void updateHighlightLine() {
         if (settings.containsKey(TextEditorConstants.HIGHLIGHT_LINE)) {
             SharedInteger line = settings.get(TextEditorConstants.HIGHLIGHT_LINE,
-                                              SharedInteger.class);
+                    SharedInteger.class);
             textEditorWindow.getCodePanel().highlightLine(line.getValue());
         } else {
             textEditorWindow.getCodePanel().clearHighlight();
@@ -260,7 +289,7 @@ public class TextEditorCell extends App2DCell
 
     private void updateStatus(BigInteger senderId) {
         SharedString val = settings.get(TextEditorConstants.STATUS,
-                                        SharedString.class);
+                SharedString.class);
 
         boolean ourChange = senderId.equals(getCellCache().getSession().getID());
 
@@ -284,15 +313,14 @@ public class TextEditorCell extends App2DCell
 
     private void updateHighlightVals() {
         SharedString val = settings.get(TextEditorConstants.HIGHLIGHT_VALUES,
-                                        SharedString.class);
+                SharedString.class);
         if (val != null) {
 //            textEditorWindow.getCodePanel().setHighlightedVals(val.getValue());
         }
     }
 
     private class DocumentHandler
-            implements DocumentListener, ComponentMessageReceiver
-    {
+            implements DocumentListener, ComponentMessageReceiver {
         private static final String REMOTE_CHANGE = "remoteChange";
 
         private Document document;
@@ -303,14 +331,13 @@ public class TextEditorCell extends App2DCell
                 new LinkedList<TextEditorCellMessage>();
 
         public DocumentHandler(final Document document, final long version,
-                               final String initialText)
-        {
+                               final String initialText) {
             this.document = document;
             this.receivedVersion = version;
             this.appliedVersion = version;
 
             document.addDocumentListener(this);
-        
+
             // populate initial text
             SwingUtilities.invokeLater(new Runnable() {
                 public void run() {
@@ -319,7 +346,7 @@ public class TextEditorCell extends App2DCell
                         document.insertString(0, initialText, null);
                     } catch (BadLocationException ble) {
                         logger.log(Level.WARNING, "Error setting initial text " +
-                                   initialText, ble);
+                                initialText, ble);
                     } finally {
                         setRemoteChange(false);
                     }
@@ -335,15 +362,15 @@ public class TextEditorCell extends App2DCell
 
             try {
                 String text = de.getDocument().getText(de.getOffset(), de.getLength());
-                
+
                 localChange();
                 channel.send(new TextEditorCellInsertMessage(getCellID(), getAppliedVersion(),
-                                                       de.getOffset(), text));
+                        de.getOffset(), text));
 
 //                scriptManager.stop();
             } catch (BadLocationException ex) {
                 logger.log(Level.WARNING, "Error reading inserted text at " +
-                           de.getOffset());
+                        de.getOffset());
             }
         }
 
@@ -355,7 +382,7 @@ public class TextEditorCell extends App2DCell
 
             localChange();
             channel.send(new TextEditorCellDeleteMessage(getCellID(), getAppliedVersion(),
-                                                   de.getOffset(), de.getLength()));
+                    de.getOffset(), de.getLength()));
 
 //            scriptManager.stop();
         }
@@ -380,7 +407,7 @@ public class TextEditorCell extends App2DCell
                 }
             });
         }
-        
+
         private void handleMessage(TextEditorCellMessage message) {
             if (message instanceof TextEditorCellInsertMessage) {
                 handleInsert((TextEditorCellInsertMessage) message);
@@ -393,7 +420,7 @@ public class TextEditorCell extends App2DCell
             // update the applied version
             setAppliedVersion(message.getVersion());
         }
-        
+
         private void handleInsert(TextEditorCellInsertMessage insert) {
             try {
                 setRemoteChange(true);
@@ -404,7 +431,7 @@ public class TextEditorCell extends App2DCell
                 setRemoteChange(false);
             }
         }
-        
+
         private void handleDelete(TextEditorCellDeleteMessage delete) {
             setRemoteChange(true);
             try {
@@ -415,7 +442,7 @@ public class TextEditorCell extends App2DCell
                 setRemoteChange(false);
             }
         }
-        
+
         private void handleMulti(TextEditorCellMultiChangeMessage multi) {
             for (TextEditorCellMessage message : multi.getMessages()) {
                 handleMessage(message);
@@ -446,8 +473,8 @@ public class TextEditorCell extends App2DCell
                 // the message with a noop that just increases the version
                 // number
                 message = new TextEditorCellDeleteMessage(message.getCellID(),
-                                                    message.getVersion(),
-                                                    0, 0);
+                        message.getVersion(),
+                        0, 0);
             }
 
             // at this point, we have a remote message. Check if we need to
@@ -465,7 +492,7 @@ public class TextEditorCell extends App2DCell
         private boolean checkMessageVersion(TextEditorCellMessage message) {
             if (message.getVersion() != (receivedVersion + 1)) {
                 logger.log(Level.WARNING, "Bad version: " + message.getVersion() +
-                           " current: " + receivedVersion);
+                        " current: " + receivedVersion);
                 return false;
             }
 
@@ -548,4 +575,49 @@ public class TextEditorCell extends App2DCell
 //            settings.put(TextEditorConstants.SWAP_COUNT, SharedInteger.valueOf(0));
 //        }
 //    }
+
+    class TextEditorContextMenuFactory implements ContextMenuFactorySPI {
+        public ContextMenuItem[] getContextMenuItems(ContextEvent contextEvent) {
+//            return new ContextMenuItem[]{new SimpleContextMenuItem("Import File", null, new TextEditorImportFileListener()),
+//                    new SimpleContextMenuItem("Export File", null, new TextEditorExportFileListener())
+           return new ContextMenuItem[]{ new SimpleContextMenuItem("Export File", null, new TextEditorExportFileListener())
+            };
+        }
+    }
+
+    class TextEditorImportFileListener implements ContextMenuActionListener {
+
+        public void actionPerformed(ContextMenuItemEvent event) {
+            JFileChooser jChooser = new JFileChooser();
+            jChooser.addChoosableFileFilter(null);
+            int response = jChooser.showOpenDialog(null);
+            if (response == JFileChooser.APPROVE_OPTION) {
+                TextEditorImportExportHelper helper = new TextEditorImportExportHelper(getCell());
+
+
+
+            }
+
+        }
+    }
+
+    class TextEditorExportFileListener implements ContextMenuActionListener {
+
+        public void actionPerformed(ContextMenuItemEvent event) {
+            JFileChooser jChooser = new JFileChooser();
+//            jChooser.setFileFilter(new FileNameExtensionFilter(BUNDLE.getString("Csv_file"), "cardwall.csv"));
+
+            jChooser.addChoosableFileFilter(null);
+
+            int response = jChooser.showSaveDialog(null);
+            if (response == JFileChooser.APPROVE_OPTION) {
+                TextEditorImportExportHelper helper = new TextEditorImportExportHelper(getCell());
+                helper.exportFile(jChooser.getSelectedFile());
+
+            }
+
+        }
+    }
 }
+
+

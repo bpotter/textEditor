@@ -20,6 +20,8 @@ package org.jdesktop.wonderland.modules.textEditor.common;
 import java.io.Serializable;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
+import javax.xml.bind.annotation.XmlTransient;
+
 import org.jdesktop.wonderland.common.cell.state.annotation.ServerState;
 import org.jdesktop.wonderland.modules.appbase.common.cell.App2DCellServerState;
 
@@ -30,7 +32,10 @@ import org.jdesktop.wonderland.modules.appbase.common.cell.App2DCellServerState;
 @XmlRootElement(name = "code-cell")
 @ServerState
 public class TextEditorCellServerState extends App2DCellServerState implements Serializable {
+    @XmlElement
     private String text;
+    @XmlElement
+    private String fileName;
 
     public TextEditorCellServerState() {
     }
@@ -39,12 +44,20 @@ public class TextEditorCellServerState extends App2DCellServerState implements S
         return "org.jdesktop.wonderland.modules.textEditor.server.TextEditorCellMO";
     }
 
-    @XmlElement
+    @XmlTransient
     public String getText() {
         return text;
     }
 
     public void setText(String text) {
         this.text = text;
+    }
+    @XmlTransient
+    public String getFileName() {
+        return fileName;
+    }
+
+    public void setFileName(String fileName) {
+        this.fileName = fileName;
     }
 }

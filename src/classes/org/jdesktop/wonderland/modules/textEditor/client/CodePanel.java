@@ -37,6 +37,9 @@ public class CodePanel extends javax.swing.JPanel {
         codePane.setContentType("text/plain");
     }
 
+    public void setFileLabel(String fileName) {
+        jLabel5.setText(fileName);
+    }
     public Document getDocument() {
         return codePane.getDocument();
     }

@@ -48,8 +48,8 @@ public class CodeControlPanel extends javax.swing.JPanel {
     }
 
     private void initIcons() {
-        dockedIcon = new ImageIcon(getClass().getResource("/org/jdesktop/wonderland/modules/programmingdemo/client/resources/WebCamDock32x32.png"));
-        undockedIcon = new ImageIcon(getClass().getResource("/org/jdesktop/wonderland/modules/programmingdemo/client/resources/WebCamUndock32x32.png"));
+        dockedIcon = new ImageIcon(getClass().getResource("/org/jdesktop/wonderland/modules/textEditor/client/resources/WebCamDock32x32.png"));
+        undockedIcon = new ImageIcon(getClass().getResource("/org/jdesktop/wonderland/modules/textEditor/client/resources/WebCamUndock32x32.png"));
     }
 
     public void setOnHUD(final boolean onHUD) {

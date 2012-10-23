@@ -32,13 +32,14 @@ public class TextEditorCellFactory implements CellFactorySPI {
                 // read the file
                 clientState = new TextEditorCellClientState();
                 clientState.setText(TextEditorImportExportHelper.importFile(uri));
-
+                clientState.setFileName(uri.substring(uri.lastIndexOf(System.getProperty("file.separator"))));
             }
         }
         if (clientState == null) {
             clientState = new TextEditorCellClientState();
         }
         state.setText(clientState.getText());
+        state.setFileName(clientState.getFileName());
         return (T) state;}
 
     public String getDisplayName() {

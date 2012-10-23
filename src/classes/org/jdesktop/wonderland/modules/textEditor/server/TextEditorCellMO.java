@@ -57,6 +57,7 @@ public class TextEditorCellMO extends App2DCellMO {
     private ManagedReference<SharedStateComponentMO> sscRef;
 
     private SharedText text;
+    private String fileName;
 
     public TextEditorCellMO() {
         super();
@@ -111,7 +112,8 @@ public class TextEditorCellMO extends App2DCellMO {
 
         ((TextEditorCellClientState) cellClientState).setVersion(text.getVersion());
         ((TextEditorCellClientState) cellClientState).setText(text.getText());
-       
+        ((TextEditorCellClientState) cellClientState).setFileName(fileName);
+
         return super.getClientState(cellClientState, clientID, capabilities);
     }
 
@@ -125,7 +127,7 @@ public class TextEditorCellMO extends App2DCellMO {
         }
 
         ((TextEditorCellServerState) state).setText(text.getText());
-
+        ((TextEditorCellServerState) state).setFileName(fileName);
         return super.getServerState(state);
     }
 
@@ -134,6 +136,7 @@ public class TextEditorCellMO extends App2DCellMO {
         super.setServerState(state);
 
         text = new SharedText(((TextEditorCellServerState) state).getText());
+        fileName = ((TextEditorCellServerState) state).getFileName();
     }
 
     private void initializeState(SharedMapSrv map) {

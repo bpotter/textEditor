@@ -1,6 +1,7 @@
 package org.jdesktop.wonderland.modules.textEditor.client;
 
 import org.jdesktop.wonderland.client.cell.asset.AssetUtils;
+import org.jdesktop.wonderland.modules.textEditor.common.TextEditorCellClientState;
 
 import java.io.*;
 import java.net.MalformedURLException;
@@ -19,6 +20,12 @@ public class TextEditorImportExportHelper {
 
     private static final Logger logger =
             Logger.getLogger(TextEditorImportExportHelper.class.getName());
+
+    private TextEditorCell cell;
+
+    public TextEditorImportExportHelper(TextEditorCell cell) {
+        this.cell = cell;
+    }
 
     public static String importFile (String uri ) {
         logger.severe("import file " + uri);
@@ -42,5 +49,21 @@ public class TextEditorImportExportHelper {
 
 
         return null;
+    }
+
+    public void exportFile(File selectedFile) {
+
+
+        try {
+            OutputStreamWriter outputStreamWriter = new OutputStreamWriter(new FileOutputStream(selectedFile));
+            outputStreamWriter.write(cell.getCurrentText());
+            outputStreamWriter.close();
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+        } catch (IOException e) {
+            e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+        }
+
+
     }
 }

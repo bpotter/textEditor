@@ -84,7 +84,7 @@ public class TextEditorWindow extends WindowSwing {
 
     /**
      * Sets the display mode for the control panel to in-world or on-HUD
-     * @param mode the control panel display mode
+     * @param displayMode the control panel display mode
      */
     public void setDisplayMode(DisplayMode displayMode) {
         this.displayMode = displayMode;
