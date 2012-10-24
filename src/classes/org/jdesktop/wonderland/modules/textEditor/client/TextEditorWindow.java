@@ -51,7 +51,7 @@ public class TextEditorWindow extends WindowSwing {
         setTitle("Text Editor");
 
         this.cell = cell;
-        this.editPanel = new TextEditorPanel(this);
+        this.editPanel = new TextEditorPanel(this, cell.getContentType());
         
         // parent to Wonderland main window for proper focus handling
         JmeClientMain.getFrame().getCanvas3DPanel().add(editPanel);

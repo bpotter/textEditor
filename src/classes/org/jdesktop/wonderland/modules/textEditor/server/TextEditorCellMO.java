@@ -18,8 +18,10 @@
 package org.jdesktop.wonderland.modules.textEditor.server;
 
 import com.sun.sgs.app.ManagedReference;
+
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
 import org.jdesktop.wonderland.common.ExperimentalAPI;
 import org.jdesktop.wonderland.common.cell.ClientCapabilities;
 import org.jdesktop.wonderland.common.cell.messages.CellMessage;
@@ -46,6 +48,7 @@ import org.jdesktop.wonderland.server.comms.WonderlandClientSender;
 
 /**
  * Server cell for code viewer
+ *
  * @author Jonathan Kaplan <jonathankap@gmail.com>
  */
 @ExperimentalAPI
@@ -58,6 +61,8 @@ public class TextEditorCellMO extends App2DCellMO {
 
     private SharedText text;
     private String fileName;
+    private String contentType;
+
 
     public TextEditorCellMO() {
         super();
@@ -86,7 +91,7 @@ public class TextEditorCellMO extends App2DCellMO {
 
             // get or create the shared maps we use
             SharedMapSrv statusMap = sscRef.get().get(TextEditorConstants.SETTINGS);
-            
+
             // write the default server state to the map
             initializeState(statusMap);
 
@@ -100,12 +105,12 @@ public class TextEditorCellMO extends App2DCellMO {
         }
     }
 
-    /** 
+    /**
      * {@inheritDoc}
      */
     @Override
     public CellClientState getClientState(CellClientState cellClientState,
-            WonderlandClientID clientID, ClientCapabilities capabilities) {
+                                          WonderlandClientID clientID, ClientCapabilities capabilities) {
         if (cellClientState == null) {
             cellClientState = new TextEditorCellClientState();
         }
@@ -117,7 +122,7 @@ public class TextEditorCellMO extends App2DCellMO {
         return super.getClientState(cellClientState, clientID, capabilities);
     }
 
-    /** 
+    /**
      * {@inheritDoc}
      */
     @Override
@@ -128,6 +133,7 @@ public class TextEditorCellMO extends App2DCellMO {
 
         ((TextEditorCellServerState) state).setText(text.getText());
         ((TextEditorCellServerState) state).setFileName(fileName);
+        ((TextEditorCellServerState) state).setContentType(contentType);
         return super.getServerState(state);
     }
 
@@ -137,6 +143,7 @@ public class TextEditorCellMO extends App2DCellMO {
 
         text = new SharedText(((TextEditorCellServerState) state).getText());
         fileName = ((TextEditorCellServerState) state).getFileName();
+        contentType = ((TextEditorCellServerState) state).getContentType();
     }
 
     private void initializeState(SharedMapSrv map) {
@@ -156,12 +163,11 @@ public class TextEditorCellMO extends App2DCellMO {
         }
     }
 
-    private void handleInsert(WonderlandClientID clientID, 
+    private void handleInsert(WonderlandClientID clientID,
                               WonderlandClientSender sender,
-                              TextEditorCellInsertMessage insert)
-    {
+                              TextEditorCellInsertMessage insert) {
         Transform add = new AddTransform(insert.getInsertionPoint(),
-                                         insert.getText());
+                insert.getText());
 
         try {
             Transform toSend = text.apply(clientID, insert.getVersion(), add);
@@ -172,12 +178,11 @@ public class TextEditorCellMO extends App2DCellMO {
         }
     }
 
-    private void handleDelete(WonderlandClientID clientID, 
+    private void handleDelete(WonderlandClientID clientID,
                               WonderlandClientSender sender,
-                              TextEditorCellDeleteMessage delete)
-    {
+                              TextEditorCellDeleteMessage delete) {
         Transform del = new DeleteTransform(delete.getDeletionPoint(),
-                                            delete.getLength());
+                delete.getLength());
 
         try {
             Transform toSend = text.apply(clientID, delete.getVersion(), del);
@@ -192,13 +197,13 @@ public class TextEditorCellMO extends App2DCellMO {
         if (transform instanceof AddTransform) {
             AddTransform add = (AddTransform) transform;
             return new TextEditorCellInsertMessage(cellID, text.getVersion(),
-                                             add.getInsertionPoint(),
-                                             add.getText());
+                    add.getInsertionPoint(),
+                    add.getText());
         } else if (transform instanceof DeleteTransform) {
             DeleteTransform delete = (DeleteTransform) transform;
             return new TextEditorCellDeleteMessage(cellID, text.getVersion(),
-                                             delete.getDeletionPoint(),
-                                             delete.getLength());
+                    delete.getDeletionPoint(),
+                    delete.getLength());
         } else if (transform instanceof MultiTransform) {
             MultiTransform multi = (MultiTransform) transform;
             TextEditorCellMultiChangeMessage out =
@@ -209,29 +214,28 @@ public class TextEditorCellMO extends App2DCellMO {
             return out;
         } else {
             throw new IllegalArgumentException("Unexpected transform: " +
-                                               transform.getClass().getName());
+                    transform.getClass().getName());
         }
     }
 
     private static class CodeMessageReceiver extends AbstractComponentMessageReceiver {
         public CodeMessageReceiver(CellMO cellMO) {
-            super (cellMO);
+            super(cellMO);
         }
 
         @Override
         public void messageReceived(WonderlandClientSender sender,
                                     WonderlandClientID clientID,
-                                    CellMessage message)
-        {
+                                    CellMessage message) {
             if (message instanceof TextEditorCellInsertMessage) {
                 ((TextEditorCellMO) getCell()).handleInsert(clientID, sender,
-                                                      (TextEditorCellInsertMessage) message);
+                        (TextEditorCellInsertMessage) message);
             } else if (message instanceof TextEditorCellDeleteMessage) {
                 ((TextEditorCellMO) getCell()).handleDelete(clientID, sender,
-                                                      (TextEditorCellDeleteMessage) message);
+                        (TextEditorCellDeleteMessage) message);
             } else {
-                logger.warning("Unexpected message type: " + 
-                               message.getClass().getName());
+                logger.warning("Unexpected message type: " +
+                        message.getClass().getName());
             }
         }
     }

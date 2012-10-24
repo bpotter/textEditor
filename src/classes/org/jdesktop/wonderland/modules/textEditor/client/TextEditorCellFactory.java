@@ -33,13 +33,17 @@ public class TextEditorCellFactory implements CellFactorySPI {
                 clientState = new TextEditorCellClientState();
                 clientState.setText(TextEditorImportExportHelper.importFile(uri));
                 clientState.setFileName(uri.substring(uri.lastIndexOf(System.getProperty("file.separator"))));
+                clientState.setContentType("text/plain");
             }
         }
         if (clientState == null) {
             clientState = new TextEditorCellClientState();
+            clientState.setFileName("In-World Document");
+            clientState.setContentType("text/plain");
         }
         state.setText(clientState.getText());
         state.setFileName(clientState.getFileName());
+        state.setContentType(clientState.getContentType());
         return (T) state;}
 
     public String getDisplayName() {

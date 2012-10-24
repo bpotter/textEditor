@@ -36,6 +36,8 @@ public class TextEditorCellServerState extends App2DCellServerState implements S
     private String text;
     @XmlElement
     private String fileName;
+    @XmlElement
+    private String contentType;
 
     public TextEditorCellServerState() {
     }
@@ -59,5 +61,13 @@ public class TextEditorCellServerState extends App2DCellServerState implements S
 
     public void setFileName(String fileName) {
         this.fileName = fileName;
+    }
+    @XmlTransient
+    public String getContentType() {
+        return contentType;
+    }
+
+    public void setContentType(String contentType) {
+        this.contentType = contentType;
     }
 }

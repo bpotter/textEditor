@@ -26,6 +26,7 @@ import org.jdesktop.wonderland.modules.appbase.common.cell.App2DCellClientState;
 public class TextEditorCellClientState extends App2DCellClientState {
     private String text;
     private String fileName;
+    private String contentType;
     private long version;
 
     public TextEditorCellClientState() {
@@ -56,5 +57,16 @@ public class TextEditorCellClientState extends App2DCellClientState {
 
     public void setFileName(String fileName) {
         this.fileName = fileName;
+    }
+
+    public String getContentType() {
+        if (contentType == null) {
+            contentType = "text/plain";
+        }
+        return contentType;
+    }
+
+    public void setContentType(String contentType) {
+        this.contentType = contentType;
     }
 }

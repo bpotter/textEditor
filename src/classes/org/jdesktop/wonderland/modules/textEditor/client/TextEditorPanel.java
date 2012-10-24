@@ -30,11 +30,11 @@ public class TextEditorPanel extends javax.swing.JPanel {
     private TextEditorWindow window;
 
     /** Creates new form TextEditorPanel */
-    public TextEditorPanel(TextEditorWindow window) {
+    public TextEditorPanel(TextEditorWindow window, String contentType) {
         this.window = window;
 
         initComponents();
-        codePane.setContentType("text/plain");
+        codePane.setContentType(contentType);
     }
 
     public void setFileLabel(String fileName) {

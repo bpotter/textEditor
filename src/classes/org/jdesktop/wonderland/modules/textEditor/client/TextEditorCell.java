@@ -317,6 +317,10 @@ public class TextEditorCell extends App2DCell
         }
     }
 
+    public String getContentType() {
+        return clientState.getContentType();
+    }
+
     private class DocumentHandler
             implements DocumentListener, ComponentMessageReceiver {
         private static final String REMOTE_CHANGE = "remoteChange";
