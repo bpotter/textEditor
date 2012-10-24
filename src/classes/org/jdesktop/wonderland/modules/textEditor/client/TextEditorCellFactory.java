@@ -19,7 +19,7 @@ import java.util.Properties;
 @CellFactory
 public class TextEditorCellFactory implements CellFactorySPI {
     public String[] getExtensions() {
-        return new String[] {"txt", "log"};
+        return new String[] {"txt", "log", "java", "html"};
     }
 
     public <T extends CellServerState> T getDefaultCellServerState(Properties properties) {

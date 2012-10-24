@@ -28,7 +28,8 @@ import org.jdesktop.wonderland.modules.appbase.client.ControlArbMulti;
  *
  * @author Jonathan Kaplan <jonathankap@gmail.com>
  */
-public class TextEditorApp extends App2D implements ControlChangeListener {
+//public class TextEditorApp extends App2D implements ControlChangeListener {
+public class TextEditorApp extends App2D  {
     private static final Logger logger =
             Logger.getLogger(TextEditorApp.class.getName());
 
@@ -37,7 +38,7 @@ public class TextEditorApp extends App2D implements ControlChangeListener {
     public TextEditorApp(String name, Vector2f pixelScale) {
         super (name, new ControlArbMulti(), pixelScale);
         controlArb.setApp(this);
-        controlArb.addListener(this);
+//        controlArb.addListener(this);
     }
 
     public void setWindow(TextEditorWindow textEditorWindow) {
@@ -48,16 +49,16 @@ public class TextEditorApp extends App2D implements ControlChangeListener {
         return textEditorWindow;
     }
 
-    /**
-     * The state of a control arb you are subscribed to may have changed.
-     * The state of whether this user has control or the current set of
-     * controlling users may have changed.
-     *
-     * @param controlArb The control arb that changed.
-     */
-    public void updateControl(ControlArb controlArb) {
-        logger.warning("Update control: " + controlArb.hasControl());
-
-        textEditorWindow.showControls(controlArb.hasControl());
-    }
+//    /**
+//     * The state of a control arb you are subscribed to may have changed.
+//     * The state of whether this user has control or the current set of
+//     * controlling users may have changed.
+//     *
+//     * @param controlArb The control arb that changed.
+//     */
+//    public void updateControl(ControlArb controlArb) {
+//        logger.warning("Update control: " + controlArb.hasControl());
+//
+//        textEditorWindow.showControls(controlArb.hasControl());
+//    }
 }

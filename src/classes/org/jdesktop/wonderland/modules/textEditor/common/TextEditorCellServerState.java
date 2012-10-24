@@ -29,7 +29,7 @@ import org.jdesktop.wonderland.modules.appbase.common.cell.App2DCellServerState;
  * The WFS server state class for TextEditorCellMO
  * @author Jonathan Kaplan <jonathankap@gmail.com>
  */
-@XmlRootElement(name = "code-cell")
+@XmlRootElement(name = "text-editor-cell")
 @ServerState
 public class TextEditorCellServerState extends App2DCellServerState implements Serializable {
     @XmlElement

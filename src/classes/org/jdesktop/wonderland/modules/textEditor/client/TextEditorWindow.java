@@ -18,16 +18,11 @@
 package org.jdesktop.wonderland.modules.textEditor.client;
 
 import com.jme.math.Vector2f;
-import com.jme.math.Vector3f;
-import java.awt.EventQueue;
-import java.util.logging.Level;
+
 import java.util.logging.Logger;
-import javax.swing.SwingUtilities;
 import javax.swing.text.Document;
-import org.jdesktop.wonderland.client.hud.CompassLayout.Layout;
-import org.jdesktop.wonderland.client.hud.HUD;
+
 import org.jdesktop.wonderland.client.hud.HUDComponent;
-import org.jdesktop.wonderland.client.hud.HUDManagerFactory;
 import org.jdesktop.wonderland.client.hud.HUDObject.DisplayMode;
 import org.jdesktop.wonderland.client.jme.JmeClientMain;
 import org.jdesktop.wonderland.modules.appbase.client.App2D;
@@ -42,8 +37,8 @@ public class TextEditorWindow extends WindowSwing {
             Logger.getLogger(TextEditorWindow.class.getName());
     
     private TextEditorCell cell;
-    private CodePanel codePanel;
-    private CodeControlPanel controls;
+    private TextEditorPanel editPanel;
+//    private CodeControlPanel controls;
     private boolean controlsEnabled = true;
     private HUDComponent controlComponent;
     private DisplayMode displayMode;
@@ -56,31 +51,31 @@ public class TextEditorWindow extends WindowSwing {
         setTitle("Text Editor");
 
         this.cell = cell;
-        this.codePanel = new CodePanel(this);
+        this.editPanel = new TextEditorPanel(this);
         
         // parent to Wonderland main window for proper focus handling
-        JmeClientMain.getFrame().getCanvas3DPanel().add(codePanel);
-        setComponent(codePanel);
+        JmeClientMain.getFrame().getCanvas3DPanel().add(editPanel);
+        setComponent(editPanel);
 
         setDisplayMode(DisplayMode.WORLD);
-        showControls(false);
+//        showControls(false);
     }
 
     public Document getDocument() {
-        return codePanel.getDocument();
+        return editPanel.getDocument();
     }
 
-    public CodePanel getCodePanel() {
-        return codePanel;
+    public TextEditorPanel getEditPanel() {
+        return editPanel;
     }
 
-    public void setControlsEnabled(boolean enabled) {
-        this.controlsEnabled = enabled;
-
-        if (controls != null) {
-            controls.setRunEnabled(enabled);
-        }
-    }
+//    public void setControlsEnabled(boolean enabled) {
+//        this.controlsEnabled = enabled;
+//
+//        if (controls != null) {
+//            controls.setRunEnabled(enabled);
+//        }
+//    }
 
     /**
      * Sets the display mode for the control panel to in-world or on-HUD
@@ -105,71 +100,71 @@ public class TextEditorWindow extends WindowSwing {
      *
      * @param visible true to show the controls, hide to hide them
      */
-    public void showControls(final boolean visible) {
-        EventQueue.invokeLater(new Runnable() {
+//    public void showControls(final boolean visible) {
+//        EventQueue.invokeLater(new Runnable() {
+//
+//            public void run() {
+//                logger.warning("show controls: " + visible);
+//                HUD mainHUD = HUDManagerFactory.getHUDManager().getHUD("main");
+//
+//                try {
+//                    if (controlComponent == null) {
+//                        // create control panel
+//                        controls = new CodeControlPanel(cell, TextEditorWindow.this);
+//                        controls.setRunEnabled(controlsEnabled);
+//
+//                        // create HUD control panel
+//                        controlComponent = mainHUD.createComponent(controls, cell);
+//                        controlComponent.setPreferredLocation(Layout.SOUTH);
+//
+//                        // add HUD control panel to HUD
+//                        mainHUD.addComponent(controlComponent);
+//                    }
+//                } catch (Throwable t) {
+//                    logger.log(Level.WARNING, "Error creating component", t);
+//                    if (t instanceof RuntimeException) {
+//                        throw (RuntimeException) t;
+//                    }
+//                }
+//
+//                SwingUtilities.invokeLater(new Runnable() {
+//
+//                    public void run() {
+//                        logger.warning("Change visibility: " + getDisplayMode());
+//
+//                        // change visibility of controls
+//                        if (getDisplayMode() == DisplayMode.HUD) {
+//                            if (controlComponent.isWorldVisible()) {
+//                                controlComponent.setWorldVisible(false);
+//                            }
+//
+//                            logger.warning("Set component visible: " + visible);
+//                            controlComponent.setVisible(visible);
+//                        } else {
+//                            controlComponent.setWorldLocation(new Vector3f(0.0f, -3.2f, 0.1f));
+//                            if (controlComponent.isVisible()) {
+//                                controlComponent.setVisible(false);
+//                            }
+//
+//                            logger.warning("Set component world visible: " + visible);
+//                            controlComponent.setWorldVisible(visible); // show world view
+//                        }
+//
+//                        updateControls();
+//                    }
+//                });
+//            }
+//        });
+//    }
+//
+//    public boolean showingControls() {
+//        return ((controlComponent != null) && (controlComponent.isVisible() || controlComponent.isWorldVisible()));
+//    }
 
-            public void run() {
-                logger.warning("show controls: " + visible);
-                HUD mainHUD = HUDManagerFactory.getHUDManager().getHUD("main");
-
-                try {
-                    if (controlComponent == null) {
-                        // create control panel
-                        controls = new CodeControlPanel(cell, TextEditorWindow.this);
-                        controls.setRunEnabled(controlsEnabled);
-                        
-                        // create HUD control panel
-                        controlComponent = mainHUD.createComponent(controls, cell);
-                        controlComponent.setPreferredLocation(Layout.SOUTH);
-
-                        // add HUD control panel to HUD
-                        mainHUD.addComponent(controlComponent);
-                    }
-                } catch (Throwable t) {
-                    logger.log(Level.WARNING, "Error creating component", t);
-                    if (t instanceof RuntimeException) {
-                        throw (RuntimeException) t;
-                    }
-                }
-
-                SwingUtilities.invokeLater(new Runnable() {
-
-                    public void run() {
-                        logger.warning("Change visibility: " + getDisplayMode());
-
-                        // change visibility of controls
-                        if (getDisplayMode() == DisplayMode.HUD) {
-                            if (controlComponent.isWorldVisible()) {
-                                controlComponent.setWorldVisible(false);
-                            }
-
-                            logger.warning("Set component visible: " + visible);
-                            controlComponent.setVisible(visible);
-                        } else {
-                            controlComponent.setWorldLocation(new Vector3f(0.0f, -3.2f, 0.1f));
-                            if (controlComponent.isVisible()) {
-                                controlComponent.setVisible(false);
-                            }
-
-                            logger.warning("Set component world visible: " + visible);
-                            controlComponent.setWorldVisible(visible); // show world view
-                        }
-
-                        updateControls();
-                    }
-                });
-            }
-        });
-    }
-
-    public boolean showingControls() {
-        return ((controlComponent != null) && (controlComponent.isVisible() || controlComponent.isWorldVisible()));
-    }
-
-    protected void updateControls() {
-        if (controls != null) {
-            boolean onHUD = (getDisplayMode() == DisplayMode.HUD);
-            controls.setOnHUD(onHUD);
-        }
-    }
+//    protected void updateControls() {
+//        if (controls != null) {
+//            boolean onHUD = (getDisplayMode() == DisplayMode.HUD);
+//            controls.setOnHUD(onHUD);
+//        }
+//    }
 }

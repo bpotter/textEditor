@@ -19,14 +19,12 @@ package org.jdesktop.wonderland.modules.textEditor.client;
 
 import com.jme.math.Vector2f;
 
-import java.math.BigInteger;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.logging.Level;
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
-import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.Document;
 
@@ -140,7 +138,7 @@ public class TextEditorCell extends App2DCell
             DocumentHandler handler = new DocumentHandler(textEditorWindow.getDocument(),
                     clientState.getVersion(),
                     clientState.getText());
-            textEditorWindow.getCodePanel().setFileLabel(clientState.getFileName());
+            textEditorWindow.getEditPanel().setFileLabel(clientState.getFileName());
             channel.addMessageReceiver(TextEditorCellInsertMessage.class, handler);
             channel.addMessageReceiver(TextEditorCellDeleteMessage.class, handler);
             channel.addMessageReceiver(TextEditorCellMultiChangeMessage.class, handler);
@@ -247,7 +245,7 @@ public class TextEditorCell extends App2DCell
                         smec.getPropertyName().equals(TextEditorConstants.SWAP_COUNT)) {
                     updateOperationCounts();
                 } else if (smec.getPropertyName().equals(TextEditorConstants.STATUS)) {
-                    updateStatus(smec.getSenderID());
+//                    updateStatus(smec.getSenderID());
                 } else if (smec.getPropertyName().equals(TextEditorConstants.HIGHLIGHT_VALUES)) {
                     updateHighlightVals();
                 }
@@ -260,7 +258,7 @@ public class TextEditorCell extends App2DCell
             public void run() {
                 updateHighlightLine();
                 updateOperationCounts();
-                updateStatus(BigInteger.ZERO);
+//                updateStatus(BigInteger.ZERO);
                 updateHighlightVals();
             }
         });
@@ -272,7 +270,7 @@ public class TextEditorCell extends App2DCell
         SharedInteger swapCount = settings.get(TextEditorConstants.SWAP_COUNT,
                 SharedInteger.class);
         if (getCount != null && swapCount != null) {
-//            textEditorWindow.getCodePanel().setOperationCount(getCount.getValue(),
+//            textEditorWindow.getEditPanel().setOperationCount(getCount.getValue(),
 //                                                        swapCount.getValue());
         }
     }
@@ -281,41 +279,41 @@ public class TextEditorCell extends App2DCell
         if (settings.containsKey(TextEditorConstants.HIGHLIGHT_LINE)) {
             SharedInteger line = settings.get(TextEditorConstants.HIGHLIGHT_LINE,
                     SharedInteger.class);
-            textEditorWindow.getCodePanel().highlightLine(line.getValue());
+            textEditorWindow.getEditPanel().highlightLine(line.getValue());
         } else {
-            textEditorWindow.getCodePanel().clearHighlight();
+            textEditorWindow.getEditPanel().clearHighlight();
         }
     }
 
-    private void updateStatus(BigInteger senderId) {
-        SharedString val = settings.get(TextEditorConstants.STATUS,
-                SharedString.class);
-
-        boolean ourChange = senderId.equals(getCellCache().getSession().getID());
-
-        if (val != null && val.getValue().equals(TextEditorConstants.RUN)) {
-            if (!ourChange) {
-                // someone else started running the code
-                textEditorWindow.setControlsEnabled(false);
-            }
-
-//            textEditorWindow.getCodePanel().setRunning(true);
-        } else {
-            if (!ourChange) {
-                // someone else requested a stop -- make sure we are stopped
-//                scriptManager.stop();
-            }
-
-            textEditorWindow.setControlsEnabled(true);
-//            textEditorWindow.getCodePanel().setRunning(false);
-        }
-    }
+//    private void updateStatus(BigInteger senderId) {
+//        SharedString val = settings.get(TextEditorConstants.STATUS,
+//                SharedString.class);
+//
+//        boolean ourChange = senderId.equals(getCellCache().getSession().getID());
+//
+//        if (val != null && val.getValue().equals(TextEditorConstants.RUN)) {
+//            if (!ourChange) {
+//                // someone else started running the code
+//                textEditorWindow.setControlsEnabled(false);
+//            }
+//
+////            textEditorWindow.getEditPanel().setRunning(true);
+//        } else {
+//            if (!ourChange) {
+//                // someone else requested a stop -- make sure we are stopped
+////                scriptManager.stop();
+//            }
+//
+//            textEditorWindow.setControlsEnabled(true);
+////            textEditorWindow.getEditPanel().setRunning(false);
+//        }
+//    }
 
     private void updateHighlightVals() {
         SharedString val = settings.get(TextEditorConstants.HIGHLIGHT_VALUES,
                 SharedString.class);
         if (val != null) {
-//            textEditorWindow.getCodePanel().setHighlightedVals(val.getValue());
+//            textEditorWindow.getEditPanel().setHighlightedVals(val.getValue());
         }
     }
 
