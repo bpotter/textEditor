@@ -8,6 +8,7 @@ import org.jdesktop.wonderland.modules.textEditor.common.TextEditorCellServerSta
 
 import java.awt.*;
 import java.util.Properties;
+import java.util.logging.Logger;
 
 /**
  * Created with IntelliJ IDEA.
@@ -18,8 +19,11 @@ import java.util.Properties;
  */
 @CellFactory
 public class TextEditorCellFactory implements CellFactorySPI {
+
+    private static final Logger logger =
+            Logger.getLogger(TextEditorCellFactory.class.getName());
     public String[] getExtensions() {
-        return new String[] {"txt", "log", "java", "html"};
+        return new String[]{"txt", "log", "java", "html", "xml"};
     }
 
     public <T extends CellServerState> T getDefaultCellServerState(Properties properties) {
@@ -32,8 +36,20 @@ public class TextEditorCellFactory implements CellFactorySPI {
                 // read the file
                 clientState = new TextEditorCellClientState();
                 clientState.setText(TextEditorImportExportHelper.importFile(uri));
-                clientState.setFileName(uri.substring(uri.lastIndexOf(System.getProperty("file.separator"))));
+                clientState.setFileName(uri.substring(uri.lastIndexOf(System.getProperty("file.separator")) + 1));
                 clientState.setContentType("text/plain");
+
+//                String extension = uri.substring(uri.lastIndexOf(".") + 1);
+//                logger.severe("file extension = " + extension);
+//                if (extension == null || extension.length() == 0) {
+//                    clientState.setContentType("text/plain");
+//                } else if (extension.equals("html")) {
+//                    clientState.setContentType("text/html");
+//                } else if (extension.equals("rtf")) {
+//                    clientState.setContentType("text/rtf");
+//                } else {
+//                    clientState.setContentType("text/plain");
+//                }
             }
         }
         if (clientState == null) {
@@ -44,7 +60,8 @@ public class TextEditorCellFactory implements CellFactorySPI {
         state.setText(clientState.getText());
         state.setFileName(clientState.getFileName());
         state.setContentType(clientState.getContentType());
-        return (T) state;}
+        return (T) state;
+    }
 
     public String getDisplayName() {
         return "Text Editor";

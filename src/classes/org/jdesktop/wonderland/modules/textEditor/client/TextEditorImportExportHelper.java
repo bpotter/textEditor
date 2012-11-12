@@ -33,15 +33,7 @@ public class TextEditorImportExportHelper {
         try {
             url = AssetUtils.getAssetURL(uri);
             InputStreamReader inputStreamReader = new InputStreamReader(url.openStream());
-            BufferedReader reader = new BufferedReader(inputStreamReader);
-
-
-            StringBuffer buffer = new StringBuffer();
-            String line;
-            while ((line = reader.readLine() ) != null)
-              buffer.append(line).append('\n');
-            reader.close();
-            return buffer.toString();
+            return readContent(inputStreamReader);
         } catch (IOException e) {
             logger.severe("File not found or cannot be accessed - " + uri);
         }
@@ -49,6 +41,18 @@ public class TextEditorImportExportHelper {
 
 
         return null;
+    }
+
+    private static String readContent(InputStreamReader inputStreamReader) throws IOException {
+        BufferedReader reader = new BufferedReader(inputStreamReader);
+
+
+        StringBuffer buffer = new StringBuffer();
+        String line;
+        while ((line = reader.readLine() ) != null)
+          buffer.append(line).append('\n');
+        reader.close();
+        return buffer.toString();
     }
 
     public void exportFile(File selectedFile) {
@@ -64,6 +68,19 @@ public class TextEditorImportExportHelper {
             e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
         }
 
+
+    }
+
+    public static String importFile(File selectedFile) {
+        logger.severe("import file " + selectedFile.getName());
+        try {
+            InputStreamReader inputStreamReader= new InputStreamReader(new FileInputStream(selectedFile));
+            return  readContent(inputStreamReader);
+        } catch (IOException e) {
+            logger.severe("File not found or cannot be accessed - " + selectedFile);
+        }
+
+        return null;
 
     }
 }

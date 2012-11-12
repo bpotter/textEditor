@@ -69,7 +69,11 @@ public class TextEditorWindow extends WindowSwing {
         return editPanel;
     }
 
-//    public void setControlsEnabled(boolean enabled) {
+    public TextEditorCell getCell() {
+        return cell;
+    }
+
+    //    public void setControlsEnabled(boolean enabled) {
 //        this.controlsEnabled = enabled;
 //
 //        if (controls != null) {

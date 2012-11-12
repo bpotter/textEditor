@@ -99,9 +99,13 @@ public class TextEditorCellMO extends App2DCellMO {
             CodeMessageReceiver receiver = new CodeMessageReceiver(this);
             channelRef.get().addMessageReceiver(TextEditorCellInsertMessage.class, receiver);
             channelRef.get().addMessageReceiver(TextEditorCellDeleteMessage.class, receiver);
+            channelRef.get().addMessageReceiver(TextEditorNewContentMessage.class, receiver);
+            channelRef.get().addMessageReceiver(TextEditorCellSyncMessage.class, receiver);
         } else {
             channelRef.get().removeMessageReceiver(TextEditorCellInsertMessage.class);
             channelRef.get().removeMessageReceiver(TextEditorCellDeleteMessage.class);
+            channelRef.get().removeMessageReceiver(TextEditorNewContentMessage.class);
+            channelRef.get().removeMessageReceiver(TextEditorCellSyncMessage.class);
         }
     }
 
@@ -224,19 +228,45 @@ public class TextEditorCellMO extends App2DCellMO {
         }
 
         @Override
-        public void messageReceived(WonderlandClientSender sender,
-                                    WonderlandClientID clientID,
-                                    CellMessage message) {
+        public synchronized void messageReceived(WonderlandClientSender sender,
+                                                 WonderlandClientID clientID,
+                                                 CellMessage message) {
             if (message instanceof TextEditorCellInsertMessage) {
                 ((TextEditorCellMO) getCell()).handleInsert(clientID, sender,
                         (TextEditorCellInsertMessage) message);
             } else if (message instanceof TextEditorCellDeleteMessage) {
                 ((TextEditorCellMO) getCell()).handleDelete(clientID, sender,
                         (TextEditorCellDeleteMessage) message);
+            } else if (message instanceof TextEditorCellSyncMessage) {
+                ((TextEditorCellMO) getCell()).handleSync(clientID, sender,
+                        (TextEditorCellSyncMessage) message);
+            } else if (message instanceof TextEditorNewContentMessage) {
+                ((TextEditorCellMO) getCell()).handleNewContent(clientID, sender,
+                        (TextEditorNewContentMessage) message);
             } else {
                 logger.warning("Unexpected message type: " +
                         message.getClass().getName());
             }
         }
+    }
+
+    private void handleNewContent(WonderlandClientID clientID, WonderlandClientSender sender, TextEditorNewContentMessage message) {
+        logger.severe("new Content");
+        text.setText(message.getText());
+
+        TextEditorCellSyncMessage syncMessage = new TextEditorCellSyncMessage(message.getCellID(), 1);
+        message.setText(text.getText());
+        logger.severe("new Content sync message - " + syncMessage.toString());
+        channelRef.get().sendAll(clientID, syncMessage);
+
+    }
+
+    private void handleSync(WonderlandClientID clientID, WonderlandClientSender sender,
+                            TextEditorCellSyncMessage message) {
+
+        message.setVersion(text.getVersion());
+        message.setText(text.getText());
+        sender.send(clientID, message);
+
     }
 }

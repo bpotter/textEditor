@@ -25,7 +25,7 @@ import org.jdesktop.wonderland.common.cell.messages.CellMessage;
  * @author Jonathan Kaplan <jonathankap@gmail.com>
  */
 public abstract class TextEditorCellMessage extends CellMessage {
-    private long version;
+    protected long version;
 
     public TextEditorCellMessage(CellID cellID, long version) {
         super (cellID);

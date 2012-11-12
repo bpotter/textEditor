@@ -19,6 +19,7 @@ package org.jdesktop.wonderland.modules.textEditor.client;
 
 import com.jme.math.Vector2f;
 
+import java.math.BigInteger;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.logging.Level;
@@ -70,6 +71,7 @@ public class TextEditorCell extends App2DCell
     private TextEditorApp textEditorApp;
     private TextEditorWindow textEditorWindow;
     private TextEditorCellClientState clientState;
+    DocumentHandler handler;
     private SharedMapCli settings;
 
 //    private ParentSortable sortable;
@@ -89,10 +91,14 @@ public class TextEditorCell extends App2DCell
 
     }
 
+    public void requestSync() {
+        handler.syncDocument();
+    }
+
     public String getCurrentText() {
-        Document document =  ((TextEditorWindow)getApp().getPrimaryWindow()).getDocument();
+        Document document = ((TextEditorWindow) getApp().getPrimaryWindow()).getDocument();
         try {
-            return  document.getText(0, document.getLength() -1);
+            return document.getText(0, document.getLength() - 1);
         } catch (BadLocationException e) {
             e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
         }
@@ -135,12 +141,14 @@ public class TextEditorCell extends App2DCell
             textEditorApp.setWindow(textEditorWindow);
 
             // add a listener to update the document
-            DocumentHandler handler = new DocumentHandler(textEditorWindow.getDocument(),
+            handler = new DocumentHandler(textEditorWindow.getDocument(),
                     clientState.getVersion(),
                     clientState.getText());
             textEditorWindow.getEditPanel().setFileLabel(clientState.getFileName());
             channel.addMessageReceiver(TextEditorCellInsertMessage.class, handler);
             channel.addMessageReceiver(TextEditorCellDeleteMessage.class, handler);
+            channel.addMessageReceiver(TextEditorCellSyncMessage.class, handler);
+            channel.addMessageReceiver(TextEditorNewContentMessage.class, handler);
             channel.addMessageReceiver(TextEditorCellMultiChangeMessage.class, handler);
 
             // both the app and the user want this window to be visible
@@ -152,6 +160,8 @@ public class TextEditorCell extends App2DCell
         } else if (status == CellStatus.DISK) {
             channel.removeMessageReceiver(TextEditorCellInsertMessage.class);
             channel.removeMessageReceiver(TextEditorCellDeleteMessage.class);
+            channel.removeMessageReceiver(TextEditorCellSyncMessage.class);
+            channel.removeMessageReceiver(TextEditorNewContentMessage.class);
             channel.removeMessageReceiver(TextEditorCellMultiChangeMessage.class);
 
             settings.removeSharedMapListener(this);
@@ -356,6 +366,11 @@ public class TextEditorCell extends App2DCell
             });
         }
 
+
+        public void syncDocument() {
+            channel.send(new TextEditorCellSyncMessage(getCellID(), 0));
+        }
+
         public void insertUpdate(DocumentEvent de) {
             // only send messages for changes that originated locally
             if (isRemoteChange(de)) {
@@ -399,10 +414,15 @@ public class TextEditorCell extends App2DCell
             SwingUtilities.invokeLater(new Runnable() {
                 public void run() {
                     // make sure the message has a valid version
-                    if (!checkMessageVersion((TextEditorCellMessage) message)) {
-                        return;
+                    if (!(message instanceof TextEditorCellSyncMessage)) {
+                        if (!checkMessageVersion((TextEditorCellMessage) message)) {
+                            return;
+                        }
+                    } else {
+                        // sync messages should be processed by all clients
+                        message.setSenderID(BigInteger.valueOf(0));
+                        receivedVersion = ((TextEditorCellSyncMessage) message).getVersion();
                     }
-
                     // go ahead and deliver or queue the message, depending
                     // on if we have outstanding local changes
                     deliverOrQueueMessage((TextEditorCellMessage) message);
@@ -410,18 +430,32 @@ public class TextEditorCell extends App2DCell
             });
         }
 
-        private void handleMessage(TextEditorCellMessage message) {
+        private synchronized void handleMessage(TextEditorCellMessage message) {
+            logger.severe("message received " + message);
             if (message instanceof TextEditorCellInsertMessage) {
                 handleInsert((TextEditorCellInsertMessage) message);
             } else if (message instanceof TextEditorCellDeleteMessage) {
                 handleDelete((TextEditorCellDeleteMessage) message);
             } else if (message instanceof TextEditorCellMultiChangeMessage) {
                 handleMulti((TextEditorCellMultiChangeMessage) message);
+            } else if (message instanceof TextEditorCellSyncMessage) {
+                handleSync((TextEditorCellSyncMessage) message);
             }
 
             // update the applied version
             setAppliedVersion(message.getVersion());
         }
+
+
+        private void handleSync(TextEditorCellSyncMessage sync) {
+            try {
+                document.remove(0, document.getLength());
+                document.insertString(0, sync.getText(), null);
+            } catch (BadLocationException e) {
+                logger.severe("Could not sync to version " + sync.getVersion());
+            }
+        }
+
 
         private void handleInsert(TextEditorCellInsertMessage insert) {
             try {
@@ -582,7 +616,7 @@ public class TextEditorCell extends App2DCell
         public ContextMenuItem[] getContextMenuItems(ContextEvent contextEvent) {
 //            return new ContextMenuItem[]{new SimpleContextMenuItem("Import File", null, new TextEditorImportFileListener()),
 //                    new SimpleContextMenuItem("Export File", null, new TextEditorExportFileListener())
-           return new ContextMenuItem[]{ new SimpleContextMenuItem("Export File", null, new TextEditorExportFileListener())
+            return new ContextMenuItem[]{new SimpleContextMenuItem("Export File", null, new TextEditorExportFileListener())
             };
         }
     }
@@ -590,15 +624,21 @@ public class TextEditorCell extends App2DCell
     class TextEditorImportFileListener implements ContextMenuActionListener {
 
         public void actionPerformed(ContextMenuItemEvent event) {
-            JFileChooser jChooser = new JFileChooser();
-            jChooser.addChoosableFileFilter(null);
-            int response = jChooser.showOpenDialog(null);
-            if (response == JFileChooser.APPROVE_OPTION) {
-                TextEditorImportExportHelper helper = new TextEditorImportExportHelper(getCell());
+            importFile();
 
+        }
+    }
 
+    public void importFile() {
+        JFileChooser jChooser = new JFileChooser();
+        jChooser.addChoosableFileFilter(null);
+        int response = jChooser.showOpenDialog(null);
+        if (response == JFileChooser.APPROVE_OPTION) {
+            TextEditorImportExportHelper helper = new TextEditorImportExportHelper(getCell());
+            TextEditorNewContentMessage message = new TextEditorNewContentMessage(this.getCellID(), 1);
+            message.setText(TextEditorImportExportHelper.importFile(jChooser.getSelectedFile()));
+            channel.send(message);
 
-            }
 
         }
     }
@@ -606,17 +646,21 @@ public class TextEditorCell extends App2DCell
     class TextEditorExportFileListener implements ContextMenuActionListener {
 
         public void actionPerformed(ContextMenuItemEvent event) {
-            JFileChooser jChooser = new JFileChooser();
+            exportFile();
+
+        }
+    }
+
+    public void exportFile() {
+        JFileChooser jChooser = new JFileChooser();
 //            jChooser.setFileFilter(new FileNameExtensionFilter(BUNDLE.getString("Csv_file"), "cardwall.csv"));
 
-            jChooser.addChoosableFileFilter(null);
+        jChooser.addChoosableFileFilter(null);
 
-            int response = jChooser.showSaveDialog(null);
-            if (response == JFileChooser.APPROVE_OPTION) {
-                TextEditorImportExportHelper helper = new TextEditorImportExportHelper(getCell());
-                helper.exportFile(jChooser.getSelectedFile());
-
-            }
+        int response = jChooser.showSaveDialog(null);
+        if (response == JFileChooser.APPROVE_OPTION) {
+            TextEditorImportExportHelper helper = new TextEditorImportExportHelper(getCell());
+            helper.exportFile(jChooser.getSelectedFile());
 
         }
     }

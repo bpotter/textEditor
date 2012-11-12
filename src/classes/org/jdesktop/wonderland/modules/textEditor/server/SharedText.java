@@ -21,11 +21,13 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
+
 import org.jdesktop.wonderland.server.comms.WonderlandClientID;
 
 /**
  * A text component designed to work with multiple users editing at the same
  * time.
+ *
  * @author Jonathan Kaplan <jonathankap@gmail.com>
  */
 public class SharedText implements Serializable {
@@ -51,25 +53,27 @@ public class SharedText implements Serializable {
      * Create a new shared text object
      */
     public SharedText() {
-        this (null);
+        this(null);
     }
 
     /**
      * Create a new shared text object with the given initial text
+     *
      * @param initialText the initial text for the buffer, or null for
-     * an empty text object
+     *                    an empty text object
      */
     public SharedText(String initialText) {
-        this (initialText, DEFAULT_LOOKBACK);
+        this(initialText, DEFAULT_LOOKBACK);
     }
 
     /**
      * Create a new shared text object with the given initial text and
      * lookback size
+     *
      * @param initialText the initial text for the buffer, or null for
-     * an empty text object
-     * @param lookback the number of operations to save. Attempts to make
-     * a change with an older version will cause an exception
+     *                    an empty text object
+     * @param lookback    the number of operations to save. Attempts to make
+     *                    a change with an older version will cause an exception
      */
     public SharedText(String initialText, int lookback) {
         if (initialText == null) {
@@ -83,6 +87,7 @@ public class SharedText implements Serializable {
 
     /**
      * Get the current text
+     *
      * @return the current text
      */
     public String getText() {
@@ -91,6 +96,7 @@ public class SharedText implements Serializable {
 
     /**
      * Get the current version number
+     *
      * @return the current version
      */
     public long getVersion() {
@@ -101,28 +107,27 @@ public class SharedText implements Serializable {
      * Apply the given transform. The text will be modified with the given
      * changes, updated to reflect the current state of the text relative
      * to when the change was submitted.
-     *
+     * <p/>
      * The caller must supply a version number, which is the version of the
      * text they saw when they requested the change. This may be older than
      * the current version by up to <i>lookback</i> revisions. Attempts to
      * submit changes against older version will result in an exception.
-     *
+     * <p/>
      * The return value is an updated transform that can be applied to the
      * previous version to get to the current version.
      *
-     * @param clientID the id of the client performing this transform
-     * @param version the version of the text that the transform was originally
-     * generated for
+     * @param clientID  the id of the client performing this transform
+     * @param version   the version of the text that the transform was originally
+     *                  generated for
      * @param transform the actual transform
      * @return the transform updated so it is appropriate to apply to the
-     * previous revision in order to create the current revision
+     *         previous revision in order to create the current revision
      * @throws OldRevisionException if the version is more than <i>lookback</i>
-     * versions older than the current version
+     *                              versions older than the current version
      */
     public Transform apply(WonderlandClientID clientID,
                            long version, Transform transform)
-        throws OldRevisionException
-    {
+            throws OldRevisionException {
         // generate a list of transforms between the submitted version and
         // the current version
         int versionCount = (int) (getVersion() - version);
@@ -133,7 +138,7 @@ public class SharedText implements Serializable {
         }
 
         logger.warning("[SharedText] Apply " + transform + " @ " + version +
-                       " to current version " + getVersion());
+                " to current version " + getVersion());
 
         // quick check -- if versionCount is zero, the change was made
         // against the current version, so we can just go ahead and apply
@@ -163,7 +168,7 @@ public class SharedText implements Serializable {
         }
 
         logger.warning("[SharedText] After update transform " + transform + "\n" +
-                       "Apply to text:\n" + text.toString());
+                "Apply to text:\n" + text.toString());
 
         // go ahead and apply the transform
         transform.apply(text);
@@ -187,6 +192,16 @@ public class SharedText implements Serializable {
         return transform;
     }
 
+    public void setText(String newText) {
+        if (text.length() > 0) {
+            text.delete(0, text.length() - 1);
+        }
+        text.ensureCapacity(newText.length());
+        text.append(newText);
+        transforms.clear();
+        version = 1;
+    }
+
     /**
      * Represents a change that can be made to the text, such as an
      * insertion or a deletion
@@ -195,6 +210,7 @@ public class SharedText implements Serializable {
         /**
          * Apply this transform to the given StringBuffer, representing the
          * current text
+         *
          * @param text the buffer to apply this change to
          */
         public void apply(StringBuffer text);
@@ -202,6 +218,7 @@ public class SharedText implements Serializable {
         /**
          * Update the given transform to make sure it can be applied
          * after this transform.
+         *
          * @param transform the transform to update
          * @return the updated transform
          */
@@ -251,7 +268,7 @@ public class SharedText implements Serializable {
                 // move the insertion point up to account for the text
                 // we added
                 return new AddTransform(add.getInsertionPoint() +
-                                        getText().length(), add.getText());
+                        getText().length(), add.getText());
             } else {
                 // the new text was added before the text we added, so no
                 // change is needed
@@ -265,7 +282,7 @@ public class SharedText implements Serializable {
                 // adjust the deletion point to account for the text
                 // we added
                 return new DeleteTransform(delete.getDeletionPoint() +
-                                           getText().length(), delete.getLength());
+                        getText().length(), delete.getLength());
             } else if (delete.getDeletionPoint() + delete.getLength() > getInsertionPoint()) {
                 // this is the tricky case -- if the deletion starts before our
                 // addition, but also continues after it, we need to split the
@@ -273,7 +290,7 @@ public class SharedText implements Serializable {
                 // insert, and the adjusted part after
                 int beforeLen = getInsertionPoint() - delete.getDeletionPoint();
                 DeleteTransform before = new DeleteTransform(delete.getDeletionPoint(),
-                                                             beforeLen);
+                        beforeLen);
                 int afterLen = delete.getLength() - beforeLen;
                 Transform after = new DeleteTransform(getInsertionPoint() +
                         getText().length(), afterLen);
@@ -348,7 +365,7 @@ public class SharedText implements Serializable {
                     deleteAmount = add.getInsertionPoint() - getDeletionPoint();
                 }
                 return new AddTransform(add.getInsertionPoint() - deleteAmount,
-                                        add.getText());
+                        add.getText());
             } else {
                 // if the insertion is entirely before this deletion, no change
                 // is needed
@@ -361,7 +378,7 @@ public class SharedText implements Serializable {
                 // if the deletion is entirely after our deletion, we can
                 // just shift it back by the amount we deleted
                 return new DeleteTransform(delete.getDeletionPoint() - getLength(),
-                                           delete.getLength());
+                        delete.getLength());
             } else if (delete.getDeletionPoint() >= getDeletionPoint()) {
                 // this deletion starts in the middle of the existing deletion,
                 // so we need to shorten it to take out the overlapping portion
@@ -374,7 +391,7 @@ public class SharedText implements Serializable {
                 }
 
                 return new DeleteTransform(getDeletionPoint(),
-                                           delete.getLength() - overlap);
+                        delete.getLength() - overlap);
             } else if (delete.getDeletionPoint() + delete.getLength() >= getDeletionPoint()) {
                 // this deletion starts before our deletion, but ends in the
                 // middle or after it. Again, we need to shorten the length
@@ -384,7 +401,7 @@ public class SharedText implements Serializable {
                     overlap = getLength();
                 }
                 return new DeleteTransform(delete.getDeletionPoint(),
-                                           delete.getLength() - overlap);
+                        delete.getLength() - overlap);
             } else {
                 // if the deletion is entirely before our deletion, we can
                 // just return it
@@ -453,11 +470,11 @@ public class SharedText implements Serializable {
      */
     public class OldRevisionException extends Exception {
         public OldRevisionException() {
-            super ();
+            super();
         }
 
         public OldRevisionException(String message) {
-            super (message);
+            super(message);
         }
     }
 }
