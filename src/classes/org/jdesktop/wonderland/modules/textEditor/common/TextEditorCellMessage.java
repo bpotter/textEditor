@@ -26,6 +26,7 @@ import org.jdesktop.wonderland.common.cell.messages.CellMessage;
  */
 public abstract class TextEditorCellMessage extends CellMessage {
     protected long version;
+    protected int offset;
 
     public TextEditorCellMessage(CellID cellID, long version) {
         super (cellID);
@@ -35,5 +36,13 @@ public abstract class TextEditorCellMessage extends CellMessage {
 
     public long getVersion() {
         return version;
+    }
+
+    public int getOffset() {
+        return offset;
+    }
+
+    public void setOffset(int offset) {
+        this.offset = offset;
     }
 }

@@ -18,17 +18,6 @@
 package org.jdesktop.wonderland.modules.textEditor.client;
 
 import com.jme.math.Vector2f;
-
-import java.math.BigInteger;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.logging.Level;
-import javax.swing.*;
-import javax.swing.event.DocumentEvent;
-import javax.swing.event.DocumentListener;
-import javax.swing.text.BadLocationException;
-import javax.swing.text.Document;
-
 import org.jdesktop.wonderland.client.cell.CellCache;
 import org.jdesktop.wonderland.client.cell.ChannelComponent.ComponentMessageReceiver;
 import org.jdesktop.wonderland.client.cell.annotation.UsesCellComponent;
@@ -45,8 +34,6 @@ import org.jdesktop.wonderland.common.cell.messages.CellMessage;
 import org.jdesktop.wonderland.common.cell.state.CellClientState;
 import org.jdesktop.wonderland.modules.appbase.client.App2D;
 import org.jdesktop.wonderland.modules.appbase.client.cell.App2DCell;
-import org.jdesktop.wonderland.modules.textEditor.common.*;
-import org.jdesktop.wonderland.modules.textEditor.common.TextEditorCellClientState;
 import org.jdesktop.wonderland.modules.sharedstate.client.SharedMapCli;
 import org.jdesktop.wonderland.modules.sharedstate.client.SharedMapEventCli;
 import org.jdesktop.wonderland.modules.sharedstate.client.SharedMapListenerCli;
@@ -54,6 +41,19 @@ import org.jdesktop.wonderland.modules.sharedstate.client.SharedStateComponent;
 import org.jdesktop.wonderland.modules.sharedstate.common.SharedBoolean;
 import org.jdesktop.wonderland.modules.sharedstate.common.SharedInteger;
 import org.jdesktop.wonderland.modules.sharedstate.common.SharedString;
+import org.jdesktop.wonderland.modules.textEditor.common.*;
+
+import javax.swing.*;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
+import javax.swing.text.BadLocationException;
+import javax.swing.text.Document;
+import java.math.BigInteger;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.logging.Level;
 
 /**
  * @author Jonathan Kaplan <jonathankap@gmail.com>
@@ -340,7 +340,7 @@ public class TextEditorCell extends App2DCell
         private long appliedVersion;
         private int localChangeCount;
         private final List<TextEditorCellMessage> queue =
-                new LinkedList<TextEditorCellMessage>();
+                Collections.synchronizedList(new ArrayList<TextEditorCellMessage>());
 
         public DocumentHandler(final Document document, final long version,
                                final String initialText) {
@@ -381,8 +381,10 @@ public class TextEditorCell extends App2DCell
                 String text = de.getDocument().getText(de.getOffset(), de.getLength());
 
                 localChange();
-                channel.send(new TextEditorCellInsertMessage(getCellID(), getAppliedVersion(),
-                        de.getOffset(), text));
+                TextEditorCellInsertMessage message = new TextEditorCellInsertMessage(getCellID(), getAppliedVersion(),
+                        de.getOffset(), text);
+                queue.add(message);
+                channel.send(message);
 
 //                scriptManager.stop();
             } catch (BadLocationException ex) {
@@ -398,8 +400,11 @@ public class TextEditorCell extends App2DCell
             }
 
             localChange();
-            channel.send(new TextEditorCellDeleteMessage(getCellID(), getAppliedVersion(),
-                    de.getOffset(), de.getLength()));
+
+            TextEditorCellDeleteMessage message = new TextEditorCellDeleteMessage(getCellID(), getAppliedVersion(),
+                    de.getOffset(), de.getLength());
+            queue.add(message);
+            channel.send(message);
 
 //            scriptManager.stop();
         }
@@ -431,7 +436,7 @@ public class TextEditorCell extends App2DCell
         }
 
         private synchronized void handleMessage(TextEditorCellMessage message) {
-            logger.severe("message received " + message);
+            logger.info("message received " + message);
             if (message instanceof TextEditorCellInsertMessage) {
                 handleInsert((TextEditorCellInsertMessage) message);
             } else if (message instanceof TextEditorCellDeleteMessage) {
@@ -460,6 +465,7 @@ public class TextEditorCell extends App2DCell
         private void handleInsert(TextEditorCellInsertMessage insert) {
             try {
                 setRemoteChange(true);
+                logger.info("insert at " + insert.getOffset() + " '" + insert.getText() + "'");
                 document.insertString(insert.getInsertionPoint(), insert.getText(), null);
             } catch (BadLocationException ex) {
                 logger.log(Level.WARNING, "Error inserting " + insert.getText(), ex);
@@ -489,18 +495,22 @@ public class TextEditorCell extends App2DCell
          * Queue messages if we have outstanding local changes.  Remote changes
          * will be applied once the server acknowledges all of our local changes.
          */
-        private void deliverOrQueueMessage(TextEditorCellMessage message) {
+        private synchronized void deliverOrQueueMessage(TextEditorCellMessage message) {
             if (message.getSenderID().equals(getCellCache().getSession().getID())) {
                 // we have received notification that one of our own messages
                 // has been processed. Update the count of local changes
-                localChangeCount--;
+                if (localChangeCount > 0) {
+                    localChangeCount--;
+                    queue.remove(0);
+                }
                 if (localChangeCount == 0) {
-                    // if the change count is now zero, we are sync'ed up
-                    // with the server, so it is a good time to process
-                    // the outstanding changes
-                    for (TextEditorCellMessage m : queue) {
-                        handleMessage(m);
-                    }
+
+//                    // if the change count is now zero, we are sync'ed up
+//                    // with the server, so it is a good time to process
+//                    // the outstanding changes
+//                    for (TextEditorCellMessage m : queue) {
+//                        handleMessage(m);
+//                    }
                     queue.clear();
                 }
 
@@ -516,9 +526,33 @@ public class TextEditorCell extends App2DCell
             // at this point, we have a remote message. Check if we need to
             // add it to the queue
             if (!queue.isEmpty() || getLocalChangeCount() > 0) {
+                // we need to fix the offset to match the local version
+                int offset = message.getOffset();
+                logger.info("message type: " + message.getClass().getSimpleName());
+                logger.info("initial offset " + offset);
+                for (TextEditorCellMessage cellMessage : queue) {
+                    logger.info("cell message " + cellMessage.getClass().getSimpleName());
+                    logger.info("offset " + cellMessage.getOffset());
+
+                    if (cellMessage.getOffset() < offset) {
+                        if (cellMessage instanceof TextEditorCellDeleteMessage) {
+                            int length = ((TextEditorCellDeleteMessage) cellMessage).getLength();
+                            logger.info("length: " + length);
+                            offset -= length;
+                        } else if (cellMessage instanceof TextEditorCellInsertMessage) {
+                            int length = ((TextEditorCellInsertMessage) cellMessage).getText().getBytes().length;
+                            logger.info("length: " + length);
+                            offset += length;
+                        }
+                    }
+                }
+                logger.info("resulting offset " + offset);
+                message.setOffset(offset);
+
+
                 // we do want to queue the message
-                queue.add(message);
-                return;
+                //queue.add(message);
+
             }
 
             // if we got here, the message should be handled immediately

@@ -24,7 +24,7 @@ import org.jdesktop.wonderland.common.cell.CellID;
  * @author Jonathan Kaplan <jonathankap@gmail.com>
  */
 public class TextEditorCellInsertMessage extends TextEditorCellMessage {
-    private int insertionPoint;
+//    private int insertionPoint;
     private String text;
     
     public TextEditorCellInsertMessage(CellID cellID, long version,
@@ -32,12 +32,12 @@ public class TextEditorCellInsertMessage extends TextEditorCellMessage {
     {
         super(cellID, version);
 
-        this.insertionPoint = insertionPoint;
+        this.offset = insertionPoint;
         this.text = text;
     }
 
     public int getInsertionPoint() {
-        return insertionPoint;
+        return offset;
     }
 
     public String getText() {

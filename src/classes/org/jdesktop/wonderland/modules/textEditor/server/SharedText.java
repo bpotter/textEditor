@@ -137,7 +137,7 @@ public class SharedText implements Serializable {
                     getVersion());
         }
 
-        logger.warning("[SharedText] Apply " + transform + " @ " + version +
+        logger.fine("[SharedText] Apply " + transform + " @ " + version +
                 " to current version " + getVersion());
 
         // quick check -- if versionCount is zero, the change was made
@@ -167,13 +167,13 @@ public class SharedText implements Serializable {
             }
         }
 
-        logger.warning("[SharedText] After update transform " + transform + "\n" +
+        logger.fine("[SharedText] After update transform " + transform + "\n" +
                 "Apply to text:\n" + text.toString());
 
         // go ahead and apply the transform
         transform.apply(text);
 
-        logger.warning("[SharedText] After apply text:\n" + text.toString());
+        logger.fine("[SharedText] After apply text:\n" + text.toString());
 
         // bump up the version number
         this.version++;

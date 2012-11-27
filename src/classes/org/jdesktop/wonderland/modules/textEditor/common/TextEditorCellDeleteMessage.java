@@ -24,7 +24,7 @@ import org.jdesktop.wonderland.common.cell.CellID;
  * @author Jonathan Kaplan <jonathankap@gmail.com>
  */
 public class TextEditorCellDeleteMessage extends TextEditorCellMessage {
-    private int deletionPoint;
+//    private int deletionPoint;
     private int length;
     
     public TextEditorCellDeleteMessage(CellID cellID, long version,
@@ -32,12 +32,12 @@ public class TextEditorCellDeleteMessage extends TextEditorCellMessage {
     {
         super(cellID, version);
 
-        this.deletionPoint = deletionPoint;
+        this.offset = deletionPoint;
         this.length = length;
     }
 
     public int getDeletionPoint() {
-        return deletionPoint;
+        return offset;
     }
 
     public int getLength() {

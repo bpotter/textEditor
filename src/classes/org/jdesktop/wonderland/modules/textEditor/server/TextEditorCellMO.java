@@ -251,12 +251,12 @@ public class TextEditorCellMO extends App2DCellMO {
     }
 
     private void handleNewContent(WonderlandClientID clientID, WonderlandClientSender sender, TextEditorNewContentMessage message) {
-        logger.severe("new Content");
+        logger.info("new Content");
         text.setText(message.getText());
 
         TextEditorCellSyncMessage syncMessage = new TextEditorCellSyncMessage(message.getCellID(), 1);
         message.setText(text.getText());
-        logger.severe("new Content sync message - " + syncMessage.toString());
+        logger.info("new Content sync message - " + syncMessage.toString());
         channelRef.get().sendAll(clientID, syncMessage);
 
     }
