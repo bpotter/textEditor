@@ -94,3 +94,8 @@ public class TextEditorCellFactory implements CellFactorySPI {
         return Toolkit.getDefaultToolkit().createImage(url);
     }
 }
+
+
+/**
+ *
+ */
