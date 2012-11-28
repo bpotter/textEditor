@@ -1,7 +1,7 @@
 /**
  * Open Wonderland
  *
- * Copyright (c) 2010, Open Wonderland Foundation, All Rights Reserved
+ * Copyright (c) 2010-2012, Open Wonderland Foundation, All Rights Reserved
  *
  * Redistributions in source code form must reproduce the above
  * copyright and this condition.
@@ -23,8 +23,14 @@ import javax.swing.text.Document;
 
 /**
  *
+ * @author Bob Potter <bpotter@acm.org>
+ *
+ * From code developed by
  * @author Jonathan Kaplan <jonathankap@gmail.com>
+ *
+ *
  */
+
 public class TextEditorPanel extends javax.swing.JPanel {
     private TextEditorWindow window;
 
@@ -153,6 +159,7 @@ public class TextEditorPanel extends javax.swing.JPanel {
                 .addGap(27, 27, 27))
         );
 
+//        jButton2.setVisible(false);
         jLabel5.getAccessibleContext().setAccessibleName("fileLabel");
     }// </editor-fold>//GEN-END:initComponents
 
@@ -161,7 +168,7 @@ public class TextEditorPanel extends javax.swing.JPanel {
     }//GEN-LAST:event_jButton1MouseClicked
 
     private void jButton2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton2ActionPerformed
-        // window.getCell().requestSync();
+        window.getCell().requestSync();
     }//GEN-LAST:event_jButton2ActionPerformed
 
     private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton1ActionPerformed

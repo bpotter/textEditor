@@ -1,7 +1,7 @@
 /**
  * Open Wonderland
  *
- * Copyright (c) 2010, Open Wonderland Foundation, All Rights Reserved
+ * Copyright (c) 2010-2012, Open Wonderland Foundation, All Rights Reserved
  *
  * Redistributions in source code form must reproduce the above
  * copyright and this condition.
@@ -21,7 +21,13 @@ import org.jdesktop.wonderland.common.cell.CellID;
 
 /**
  * A message requesting deleting a portion of text
+ *
+ * @author Bob Potter <bpotter@acm.org>
+ *
+ * From code developed by
  * @author Jonathan Kaplan <jonathankap@gmail.com>
+ *
+ *
  */
 public class TextEditorCellDeleteMessage extends TextEditorCellMessage {
 //    private int deletionPoint;

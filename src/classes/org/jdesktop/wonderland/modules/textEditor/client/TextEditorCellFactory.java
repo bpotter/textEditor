@@ -1,3 +1,20 @@
+/**
+ * Open Wonderland
+ *
+ * Copyright (c) 2010-2012, Open Wonderland Foundation, All Rights Reserved
+ *
+ * Redistributions in source code form must reproduce the above
+ * copyright and this condition.
+ *
+ * The contents of this file are subject to the GNU General Public
+ * License, Version 2 (the "License"); you may not use this file
+ * except in compliance with the License. A copy of the License is
+ * available at http://www.opensource.org/licenses/gpl-license.php.
+ *
+ * The Open Wonderland Foundation designates this particular file as
+ * subject to the "Classpath" exception as provided by the Open Wonderland
+ * Foundation in the License file that accompanied this code.
+ */
 package org.jdesktop.wonderland.modules.textEditor.client;
 
 import org.jdesktop.wonderland.client.cell.registry.annotation.CellFactory;
@@ -7,16 +24,20 @@ import org.jdesktop.wonderland.modules.textEditor.common.TextEditorCellClientSta
 import org.jdesktop.wonderland.modules.textEditor.common.TextEditorCellServerState;
 
 import java.awt.*;
+import java.net.URL;
 import java.util.Properties;
 import java.util.logging.Logger;
 
 /**
- * Created with IntelliJ IDEA.
- * User: Bob
- * Date: 19/10/12
- * Time: 10:01 PM
- * To change this template use File | Settings | File Templates.
+ *
+ * @author Bob Potter <bpotter@acm.org>
+ *
+ * From code developed by
+ * @author Jonathan Kaplan <jonathankap@gmail.com>
+ *
+ *
  */
+
 @CellFactory
 public class TextEditorCellFactory implements CellFactorySPI {
 
@@ -69,6 +90,7 @@ public class TextEditorCellFactory implements CellFactorySPI {
     }
 
     public Image getPreviewImage() {
-        return null;
+        URL url = TextEditorCellFactory.class.getResource("resources/textEditorIcon.png");
+        return Toolkit.getDefaultToolkit().createImage(url);
     }
 }

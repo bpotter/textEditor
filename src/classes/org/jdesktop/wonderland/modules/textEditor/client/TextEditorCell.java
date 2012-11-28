@@ -1,7 +1,7 @@
 /**
  * Open Wonderland
  *
- * Copyright (c) 2010, Open Wonderland Foundation, All Rights Reserved
+ * Copyright (c) 2010-2012, Open Wonderland Foundation, All Rights Reserved
  *
  * Redistributions in source code form must reproduce the above
  * copyright and this condition.
@@ -48,15 +48,21 @@ import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.Document;
+import java.io.File;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.logging.Level;
 
 /**
+ *
+ * @author Bob Potter <bpotter@acm.org>
+ *
+ * From code developed by
  * @author Jonathan Kaplan <jonathankap@gmail.com>
+ *
+ *
  */
 public class TextEditorCell extends App2DCell
         implements SharedMapListenerCli {
@@ -73,6 +79,8 @@ public class TextEditorCell extends App2DCell
     private TextEditorCellClientState clientState;
     DocumentHandler handler;
     private SharedMapCli settings;
+
+    private boolean syncInProgress = false;
 
 //    private ParentSortable sortable;
 
@@ -368,6 +376,7 @@ public class TextEditorCell extends App2DCell
 
 
         public void syncDocument() {
+            syncInProgress = true;
             channel.send(new TextEditorCellSyncMessage(getCellID(), 0));
         }
 
@@ -426,6 +435,7 @@ public class TextEditorCell extends App2DCell
                     } else {
                         // sync messages should be processed by all clients
                         message.setSenderID(BigInteger.valueOf(0));
+                        syncInProgress = false;
                         receivedVersion = ((TextEditorCellSyncMessage) message).getVersion();
                     }
                     // go ahead and deliver or queue the message, depending
@@ -454,8 +464,10 @@ public class TextEditorCell extends App2DCell
 
         private void handleSync(TextEditorCellSyncMessage sync) {
             try {
+                setRemoteChange(true);
                 document.remove(0, document.getLength());
                 document.insertString(0, sync.getText(), null);
+                setRemoteChange(false);
             } catch (BadLocationException e) {
                 logger.severe("Could not sync to version " + sync.getVersion());
             }
@@ -514,45 +526,52 @@ public class TextEditorCell extends App2DCell
                     queue.clear();
                 }
 
-                // for a local change, we don't want to make any changes, we
-                // just want to update the version number. So we substitute
-                // the message with a noop that just increases the version
-                // number
-                message = new TextEditorCellDeleteMessage(message.getCellID(),
-                        message.getVersion(),
-                        0, 0);
-            }
+                if (message instanceof TextEditorCellSyncMessage) {
+                    queue.clear();
+                } else {
+                    // for a local change, we don't want to make any changes, we
+                    // just want to update the version number. So we substitute
+                    // the message with a noop that just increases the version
+                    // number
+                    message = new TextEditorCellDeleteMessage(message.getCellID(),
+                            message.getVersion(),
+                            0, 0);
+                }
+            } else {
+                if (syncInProgress) {
+                    return;  // ignore all messages until we have received the sync data
+                }
+                // at this point, we have a remote message. Check if we need to
+                // add it to the queue
+                if (!queue.isEmpty() || getLocalChangeCount() > 0) {
+                    // we need to fix the offset to match the local version
+                    int offset = message.getOffset();
+                    logger.info("message type: " + message.getClass().getSimpleName());
+                    logger.info("initial offset " + offset);
+                    for (TextEditorCellMessage cellMessage : queue) {
+                        logger.info("cell message " + cellMessage.getClass().getSimpleName());
+                        logger.info("offset " + cellMessage.getOffset());
 
-            // at this point, we have a remote message. Check if we need to
-            // add it to the queue
-            if (!queue.isEmpty() || getLocalChangeCount() > 0) {
-                // we need to fix the offset to match the local version
-                int offset = message.getOffset();
-                logger.info("message type: " + message.getClass().getSimpleName());
-                logger.info("initial offset " + offset);
-                for (TextEditorCellMessage cellMessage : queue) {
-                    logger.info("cell message " + cellMessage.getClass().getSimpleName());
-                    logger.info("offset " + cellMessage.getOffset());
-
-                    if (cellMessage.getOffset() < offset) {
-                        if (cellMessage instanceof TextEditorCellDeleteMessage) {
-                            int length = ((TextEditorCellDeleteMessage) cellMessage).getLength();
-                            logger.info("length: " + length);
-                            offset -= length;
-                        } else if (cellMessage instanceof TextEditorCellInsertMessage) {
-                            int length = ((TextEditorCellInsertMessage) cellMessage).getText().getBytes().length;
-                            logger.info("length: " + length);
-                            offset += length;
+                        if (cellMessage.getOffset() < offset) {
+                            if (cellMessage instanceof TextEditorCellDeleteMessage) {
+                                int length = ((TextEditorCellDeleteMessage) cellMessage).getLength();
+                                logger.info("length: " + length);
+                                offset -= length;
+                            } else if (cellMessage instanceof TextEditorCellInsertMessage) {
+                                int length = ((TextEditorCellInsertMessage) cellMessage).getText().getBytes().length;
+                                logger.info("length: " + length);
+                                offset += length;
+                            }
                         }
                     }
+                    logger.info("resulting offset " + offset);
+                    message.setOffset(offset);
+
+
+                    // we do want to queue the message
+                    //queue.add(message);
+
                 }
-                logger.info("resulting offset " + offset);
-                message.setOffset(offset);
-
-
-                // we do want to queue the message
-                //queue.add(message);
-
             }
 
             // if we got here, the message should be handled immediately
@@ -694,7 +713,11 @@ public class TextEditorCell extends App2DCell
         int response = jChooser.showSaveDialog(null);
         if (response == JFileChooser.APPROVE_OPTION) {
             TextEditorImportExportHelper helper = new TextEditorImportExportHelper(getCell());
-            helper.exportFile(jChooser.getSelectedFile());
+            File file = jChooser.getSelectedFile();
+            if (!file.getName().contains(".")) {
+                file = new File(file.getPath() + ".txt");
+            }
+            helper.exportFile(file);
 
         }
     }

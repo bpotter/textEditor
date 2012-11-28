@@ -1,7 +1,7 @@
 /**
  * Open Wonderland
  *
- * Copyright (c) 2010, Open Wonderland Foundation, All Rights Reserved
+ * Copyright (c) 2010-2012, Open Wonderland Foundation, All Rights Reserved
  *
  * Redistributions in source code form must reproduce the above
  * copyright and this condition.
@@ -30,7 +30,12 @@ import org.jdesktop.wonderland.modules.appbase.client.swing.WindowSwing;
 
 /**
  *
+ * @author Bob Potter <bpotter@acm.org>
+ *
+ * From code developed by
  * @author Jonathan Kaplan <jonathankap@gmail.com>
+ *
+ *
  */
 public class TextEditorWindow extends WindowSwing {
     private static final Logger logger =
